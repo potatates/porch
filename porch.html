@@ -1,0 +1,437 @@
+<title>Porch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
+<style>
+/* Layout: one narrow centered column, a writing prompt on top, a feed that ends. */
+:root {
+  --bg: #f6f6f2;
+  --surface: #ffffff;
+  --fg: #1d1f1b;
+  --muted: #6d7268;
+  --line: #e3e4dd;
+  --accent: #4b6b4f;
+  --accent-soft: #e6ece4;
+  --a1: #c9d6c4; --a2: #d9cfc0; --a3: #c8d2dc; --a4: #e0cdcd; --a5: #d6d2e2; --a6: #d8dcc2;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141613; --surface: #1c1f1b; --fg: #e8e9e3; --muted: #969b90; --line: #2c302a;
+    --accent: #9cbf9f; --accent-soft: #243026;
+    --a1: #3a4a38; --a2: #4a4134; --a3: #34404c; --a4: #4c3838; --a5: #403a4e; --a6: #444a32;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141613; --surface: #1c1f1b; --fg: #e8e9e3; --muted: #969b90; --line: #2c302a;
+  --accent: #9cbf9f; --accent-soft: #243026;
+  --a1: #3a4a38; --a2: #4a4134; --a3: #34404c; --a4: #4c3838; --a5: #403a4e; --a6: #444a32;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 580px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: flex; flex-direction: column; gap: 28px; }
+.col { display: flex; flex-direction: column; gap: 28px; }
+
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+nav { display: flex; gap: 4px; }
+nav button { font: inherit; font-size: 14px; background: none; border: 0; color: var(--muted); padding: 6px 10px; border-radius: 999px; cursor: pointer; }
+nav button[aria-selected="true"] { color: var(--fg); background: var(--line); }
+button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.av { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 600; color: var(--fg); flex: none; }
+.av.sm { width: 22px; height: 22px; font-size: 10px; }
+.stack { display: flex; }
+.stack .av { border: 2px solid var(--surface); margin-left: -6px; }
+.stack .av:first-child { margin-left: 0; }
+
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 500; }
+
+/* prompt */
+.prompt { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+.prompt-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.prompt q { font-family: var(--serif); font-style: italic; font-size: 25px; line-height: 1.28; quotes: none; text-wrap: balance; }
+.answered-row { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.locked { display: flex; flex-direction: column; gap: 8px; }
+.ghost { height: 12px; border-radius: 4px; background: var(--line); }
+.hint { font-size: 13px; color: var(--muted); }
+
+.timer-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.timer { font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
+.timer.done { color: var(--accent); }
+.tbar { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.tbar i { display: block; height: 100%; background: var(--accent); transition: width 1s linear; }
+
+textarea, input[type="text"] { font: inherit; width: 100%; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 10px; padding: 10px 12px; }
+textarea { resize: vertical; min-height: 76px; }
+textarea.write { min-height: 200px; font-family: var(--serif); font-size: 17px; line-height: 1.6; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.btn { font: inherit; font-size: 14px; font-weight: 500; border: 0; border-radius: 999px; padding: 8px 16px; background: var(--fg); color: var(--bg); cursor: pointer; }
+.btn:disabled { opacity: 0.35; cursor: default; }
+.btn.quiet { background: none; color: var(--fg); border: 1px solid var(--line); }
+
+/* pieces of writing */
+.pieces { display: flex; flex-direction: column; gap: 22px; }
+.piece { display: flex; flex-direction: column; gap: 8px; }
+.piece-head { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.piece-head .name { font-weight: 500; }
+.piece-head .words { color: var(--muted); }
+.piece .text { font-family: var(--serif); font-size: 17px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.pieces .piece + .piece { border-top: 1px solid var(--line); padding-top: 22px; }
+
+/* composer + feed */
+.composer { display: flex; flex-direction: column; gap: 10px; }
+.feed { display: flex; flex-direction: column; }
+.day { padding-block: 14px 6px; }
+.post { display: flex; gap: 12px; padding-block: 14px; border-top: 1px solid var(--line); }
+.day + .post { border-top: 0; }
+.post-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.meta { display: flex; gap: 8px; font-size: 13px; }
+.meta .name { font-weight: 500; }
+.meta .time { color: var(--muted); }
+.post p { margin: 0; overflow-wrap: anywhere; }
+
+/* comments */
+.ctoggle { align-self: flex-start; font: inherit; font-size: 13px; color: var(--muted); background: none; border: 0; padding: 2px 0; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.ctoggle:hover { color: var(--fg); }
+.ctoggle .stack .av { width: 18px; height: 18px; font-size: 9px; border-color: var(--bg); }
+.prompt .ctoggle .stack .av { border-color: var(--surface); }
+.thread { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; }
+.bubble { align-self: flex-start; max-width: 85%; display: flex; flex-direction: column; gap: 1px; }
+.bubble .from { font-size: 11px; color: var(--muted); padding-left: 12px; }
+.bubble .msg { background: var(--line); padding: 7px 12px; border-radius: 16px 16px 16px 4px; font-size: 14px; overflow-wrap: anywhere; }
+.bubble + .bubble.same .from { display: none; }
+.bubble.mine { align-self: flex-end; }
+.bubble.mine .from { display: none; }
+.bubble.mine .msg { background: var(--accent); color: var(--bg); border-radius: 16px 16px 4px 16px; }
+.reply { display: flex; align-items: center; gap: 6px; margin-top: 4px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 3px 3px 14px; background: var(--bg); }
+.prompt .reply { background: var(--surface); }
+.reply:focus-within { border-color: var(--accent); }
+.reply input { border: 0; background: none; padding: 5px 0; font-size: 14px; min-width: 0; outline: none; }
+.reply button { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 0; background: var(--fg); color: var(--bg); display: grid; place-items: center; cursor: pointer; }
+.reply button svg { width: 14px; height: 14px; }
+
+.end { text-align: center; padding-block: 36px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; border-top: 1px solid var(--line); }
+.end strong { font-weight: 500; }
+.end span { color: var(--muted); font-size: 13px; max-width: 34ch; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+/* past prompts */
+.past { display: flex; flex-direction: column; }
+.past details { border-top: 1px solid var(--line); padding-block: 16px; }
+.past details:last-child { border-bottom: 1px solid var(--line); }
+.past summary { cursor: pointer; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.past summary::-webkit-details-marker { display: none; }
+.past summary .pq { font-family: var(--serif); font-style: italic; font-size: 20px; line-height: 1.3; }
+.past summary .label { text-transform: none; letter-spacing: 0; font-size: 13px; }
+.past .pieces { padding-top: 20px; }
+
+/* prompt source + bank */
+.src { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.bank { display: flex; flex-direction: column; gap: 14px; }
+.queue { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.queue li { display: grid; grid-template-columns: 112px 1fr; gap: 12px; padding-block: 14px; border-top: 1px solid var(--line); }
+.queue li:last-child { border-bottom: 1px solid var(--line); }
+.qwhen { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 2px; }
+.qbody { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.qtext { font-family: var(--serif); font-size: 18px; line-height: 1.35; overflow-wrap: anywhere; }
+.fallback .qtext { color: var(--muted); font-style: italic; }
+.link { font: inherit; background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; cursor: pointer; }
+.add { display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 440px) { .queue li { grid-template-columns: 1fr; gap: 4px; } }
+
+/* circle */
+.circle-list { display: flex; flex-direction: column; }
+.member { display: flex; align-items: center; gap: 12px; padding-block: 12px; border-top: 1px solid var(--line); }
+.member:last-child { border-bottom: 1px solid var(--line); }
+.member .info { flex: 1; min-width: 0; }
+.member .info div:last-child { font-size: 13px; color: var(--muted); }
+.cap { display: flex; flex-direction: column; gap: 8px; }
+.bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 999px; font-size: 13px; }
+@media (prefers-reduced-motion: no-preference) { .fade { animation: fade .25s ease-out; } @keyframes fade { from { opacity: .4; transform: translateY(3px); } } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">Porch</div>
+    <nav role="tablist">
+      <button role="tab" id="tab-home" aria-selected="true" data-view="home">Today</button>
+      <button role="tab" id="tab-prompts" aria-selected="false" data-view="prompts">Prompts</button>
+      <button role="tab" id="tab-circle" aria-selected="false" data-view="circle">Circle</button>
+    </nav>
+  </header>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const ME = { id: 'me', name: 'You', c: 'a1' };
+const FRIENDS = [
+  { id: 'jules', name: 'Jules', c: 'a2', since: 'Mar 2025' },
+  { id: 'priya', name: 'Priya', c: 'a3', since: 'Mar 2025' },
+  { id: 'theo',  name: 'Theo',  c: 'a4', since: 'Apr 2025' },
+  { id: 'noor',  name: 'Noor',  c: 'a5', since: 'Jun 2025' },
+  { id: 'sam',   name: 'Sam',   c: 'a6', since: 'Aug 2025' },
+  { id: 'ben',   name: 'Ben',   c: 'a2', since: 'Jan 2026' },
+  { id: 'lena',  name: 'Lena',  c: 'a3', since: 'May 2026' },
+];
+const P = Object.fromEntries([ME, ...FRIENDS].map(f => [f.id, f]));
+const CIRCLE_MAX = 15;
+const WRITE_SECONDS = 5 * 60;
+
+let uid = 100;
+const c = (by, t) => ({ by, t });
+
+const state = {
+  view: 'home',
+  drafts: {},
+  open: new Set(),
+  timer: { started: false, left: WRITE_SECONDS, h: null },
+  answered: false,
+  prompt: {
+    q: 'What\u2019s something you\u2019ve completely changed your mind about in the last few years?',
+    day: 'Thursday prompt',
+    from: 'priya',
+    next: 'Next one Monday',
+    answers: [
+      { id: 'a1', by: 'priya', t: 'Therapy. I used to think it was for people who had something seriously wrong. Now I think it\u2019s closer to going to the gym. You don\u2019t wait until you can\u2019t walk up the stairs. I wish someone had told me that at 19.', comments: [c('noor', 'the gym comparison is so real'), c('priya', 'took me way too long to get there')] },
+      { id: 'a2', by: 'theo', t: 'Moving back home after college. I was embarrassed about it for a year and acted like it was temporary every time someone asked. Honestly it was the best financial decision I\u2019ve made, and I got to actually know my parents as people instead of as parents.', comments: [] },
+      { id: 'a3', by: 'lena', t: 'Being busy. I used to treat a full calendar like proof that my life was going well. Now when I\u2019m booked every night I mostly feel like I\u2019m avoiding something. I\u2019d rather have one good dinner than four rushed ones.', comments: [c('jules', 'calling me out personally'), c('sam', 'one good dinner > four rushed ones, yes')] },
+      { id: 'a4', by: 'jules', t: 'That you have to stay close with people just because you\u2019ve known them forever. Some friendships are seasonal and that\u2019s okay. Letting one fade isn\u2019t a betrayal.', comments: [] },
+    ],
+  },
+  posts: [
+    { id: 1, by: 'sam',   day: 'Today', time: '9:12 am', t: 'Okay who left a single grape on my doorstep', comments: [c('ben', 'not me but I respect it'), c('noor', 'the grape knows what it did')] },
+    { id: 2, by: 'jules', day: 'Today', time: '8:40 am', t: 'The fog this morning made the whole street look like a painting. Walked the long way to work on purpose.', comments: [] },
+    { id: 3, by: 'ben',   day: 'Yesterday', time: '10:58 pm', t: 'Finally finished the puzzle. 1000 pieces, 3 weeks, 1 missing piece. Classic.', comments: [c('theo', 'check under the couch'), c('ben', 'I have checked under the couch FOUR times')] },
+    { id: 4, by: 'priya', day: 'Yesterday', time: '6:15 pm', t: 'Interview went well I think?? Will know by Friday. Thank you for the pep talks.', comments: [c('lena', 'you got this'), c('sam', 'tell us the second you hear')] },
+    { id: 5, by: 'noor',  day: 'Tuesday', time: '7:30 pm', t: 'Made my grandma’s lentil recipe and it tasted almost right. Almost.', comments: [c('priya', 'what’s missing?'), c('noor', 'no idea. maybe her')] },
+    { id: 6, by: 'theo',  day: 'Tuesday', time: '1:04 pm', t: 'Hot take: Tuesday is the best day of the week. Nothing is expected of it.', comments: [] },
+  ],
+  past: [
+    { q: 'Should you tell a friend if you don\u2019t like the person they\u2019re dating?', when: 'Monday, Oct 5', from: 'sam', answers: [
+      { id: 'p1', by: 'me', t: 'Only if it\u2019s about how they treat your friend, not whether you personally like them. \u201cI don\u2019t vibe with him\u201d is your problem. \u201cHe talks over you every time\u201d is worth saying once, kindly, and then dropping.', comments: [c('sam', 'say it once and drop it is the key part')] },
+      { id: 'p2', by: 'sam', t: 'Yes, but expect it to cost you something. I told a friend once and we didn\u2019t talk for months. She came back later and said she was glad I did. Still not sure it was worth it.', comments: [] },
+      { id: 'p3', by: 'noor', t: 'No unless it\u2019s unsafe. People find out on their own and they remember who made them feel stupid about it.', comments: [c('ben', 'kind of agree with this more')] },
+    ]},
+    { q: 'Is it better to be really good at one thing or decent at a lot of things?', when: 'Thursday, Oct 1', from: null, answers: [
+      { id: 'p4', by: 'me', t: 'Decent at a lot of things makes life more fun. Really good at one thing makes you more money. I keep choosing fun and then being annoyed about money.', comments: [c('theo', 'too real')] },
+      { id: 'p5', by: 'theo', t: 'One thing. Getting really good at something teaches you how to get good at anything, and you can\u2019t learn that by staying at decent.', comments: [] },
+      { id: 'p6', by: 'lena', t: 'A lot of things. The most interesting people I know are the ones who connect ideas from places nobody else is looking.', comments: [] },
+    ]},
+    { q: 'Do you think people actually change, or just get better at hiding things?', when: 'Monday, Sep 28', from: 'lena', answers: [
+      { id: 'p7', by: 'me', t: 'They change, but slower than anyone wants, and usually only after something forces them to.', comments: [] },
+      { id: 'p8', by: 'ben', t: 'Core personality stays. Habits change. I\u2019m still impatient, I just don\u2019t take it out on people anymore. I\u2019d call that change.', comments: [c('lena', 'I\u2019d call it change too')] },
+    ]},
+  ],
+  bank: [
+    { id: 'b1', by: 'noor', q: 'What\u2019s an opinion you have that most people our age would disagree with?' },
+    { id: 'b2', by: 'ben', q: 'Is it rude to cancel plans last minute just because you don\u2019t feel like going?' },
+    { id: 'b3', by: 'jules', q: 'What do you think we\u2019ll be embarrassed about in ten years that seems normal now?' },
+  ],
+};
+
+const esc = s => s.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+const av = (id, cls = '') => { const p = P[id]; return `<div class="av ${cls}" style="background:var(--${p.c})" aria-hidden="true">${p.name[0]}</div>`; };
+const words = t => (t.trim().match(/\S+/g) || []).length;
+const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+const draft = id => esc(state.drafts[id] || '');
+
+function thread(key, list) {
+  const isOpen = state.open.has(key);
+  const who = [...new Set(list.map(x => x.by))];
+  const names = who.map(id => P[id].name);
+  const said = names.length === 1 ? names[0] : names.length === 2 ? `${names[0]} and ${names[1]}` : `${names[0]} and ${names.length - 1} others`;
+  const label = isOpen ? 'Hide' : list.length
+    ? `<span class="stack">${who.slice(0, 3).map(id => av(id)).join('')}</span>${said} said something`
+    : 'Say something';
+  return `<button class="ctoggle" data-toggle="${key}" aria-expanded="${isOpen}">${label}</button>
+    ${isOpen ? `<div class="thread fade">
+      ${list.map((x, i) => `<div class="bubble ${x.by === 'me' ? 'mine' : ''} ${i && list[i - 1].by === x.by ? 'same' : ''}"><span class="from">${P[x.by].name}</span><span class="msg">${esc(x.t)}</span></div>`).join('')}
+      <form class="reply" data-reply="${key}"><input type="text" id="c-${key}" placeholder="Say something" value="${draft('c-' + key)}" autocomplete="off"><button aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></form>
+    </div>` : ''}`;
+}
+
+function pieces(list) {
+  return `<div class="pieces">${list.map(a => `
+    <div class="piece fade">
+      <div class="piece-head">${av(a.by, 'sm')}<span class="name">${P[a.by].name}</span><span class="words">${words(a.t)} words</span></div>
+      <p class="text">${esc(a.t)}</p>
+      ${thread(a.id, a.comments)}
+    </div>`).join('')}</div>`;
+}
+
+function promptCard() {
+  const pr = state.prompt, tm = state.timer;
+  const head = `<div class="prompt-top"><span class="label">${pr.day}</span><span class="label">${pr.next}</span></div><q>${pr.q}</q>${source(pr.from)}`;
+  if (state.answered) {
+    return `<section class="prompt">${head}
+      <div class="answered-row">${pr.answers.length} of ${FRIENDS.length + 1} wrote</div>${pieces(pr.answers)}</section>`;
+  }
+  const ids = pr.answers.map(a => a.by);
+  const status = `<div class="answered-row"><div class="stack">${ids.map(id => av(id, 'sm')).join('')}</div>${ids.length} of ${FRIENDS.length} friends wrote. Write yours to read theirs.</div>
+    <div class="locked" aria-hidden="true"><div class="ghost" style="width:92%"></div><div class="ghost" style="width:70%"></div><div class="ghost" style="width:84%"></div></div>`;
+  if (!tm.started) {
+    return `<section class="prompt">${head}${status}
+      <div class="row"><span class="hint">Take five minutes. Say what you actually think.</span><button class="btn" id="start-btn">Start writing</button></div></section>`;
+  }
+  const done = tm.left === 0;
+  return `<section class="prompt">${head}
+    <div class="timer-row"><span class="timer ${done ? 'done' : ''}" id="timer">${done ? 'Time' : fmt(tm.left)}</span><span class="hint" id="timer-hint">${done ? 'Finish your sentence, then share.' : 'No wrong answers. Just yours.'}</span></div>
+    <div class="tbar"><i id="tbar" style="width:${tm.left / WRITE_SECONDS * 100}%"></i></div>
+    <textarea class="write" id="answer" placeholder="What do you think?">${draft('answer')}</textarea>
+    <div class="row"><span class="count" id="answer-count">${words(state.drafts.answer || '')} words</span><button class="btn" id="answer-btn" ${words(state.drafts.answer || '') ? '' : 'disabled'}>Share with circle</button></div>
+  </section>`;
+}
+
+function home() {
+  let lastDay = null;
+  const feed = state.posts.map(p => {
+    const dayHead = p.day !== lastDay ? `<div class="day label">${p.day}</div>` : '';
+    lastDay = p.day;
+    return `${dayHead}<article class="post">${av(p.by)}<div class="post-body">
+      <div class="meta"><span class="name">${P[p.by].name}</span><span class="time">${p.time}</span></div>
+      <p>${esc(p.t)}</p>${thread('post' + p.id, p.comments)}
+    </div></article>`;
+  }).join('');
+  return `${promptCard()}
+    <section class="composer">
+      <textarea id="post" placeholder="What's on your mind?" maxlength="280">${draft('post')}</textarea>
+      <div class="row"><span class="count" id="post-count">${(state.drafts.post || '').length} / 280</span><button class="btn" id="post-btn" ${(state.drafts.post || '').trim() ? '' : 'disabled'}>Post</button></div>
+    </section>
+    <section class="feed" aria-label="Feed">${feed}
+      <div class="end"><div class="dot"></div><strong>You're all caught up</strong><span>That's everything from your circle since Tuesday. Go outside for a bit.</span></div>
+    </section>`;
+}
+
+function source(by) {
+  return `<span class="src">${by ? `${av(by, 'sm')}From ${P[by].name}` : 'From Porch\u2019s default list'}</span>`;
+}
+
+function prompts() {
+  const bank = state.bank;
+  return `<section class="bank">
+      <div class="row"><span class="label">Prompt bank</span><span class="count">${bank.length} waiting</span></div>
+      <p class="hint" style="margin:0">Anyone in the circle can add a prompt. They go out in order, every Monday and Thursday. If the bank is empty, Porch picks one from its default list.</p>
+      <ol class="queue">${bank.map((b, i) => `
+        <li class="fade"><div class="qwhen">${['Monday', 'Thursday'][i % 2]}, Oct ${[12, 15, 19, 22, 26, 29][i] || '\u2014'}</div>
+          <div class="qbody"><div class="qtext">${esc(b.q)}</div><div class="src">${av(b.by, 'sm')}${b.by === 'me' ? 'You added this' : P[b.by].name}${b.by === 'me' ? ` · <button class="link" data-remove="${b.id}">Remove</button>` : ''}</div></div></li>`).join('')}
+        <li class="fallback"><div class="qwhen">After that</div><div class="qbody"><div class="qtext">A prompt from Porch\u2019s default list</div></div></li>
+      </ol>
+      <form class="add" id="add-form">
+        <textarea id="newq" placeholder="Ask your circle something. What do you want to hear their take on?" maxlength="200">${draft('newq')}</textarea>
+        <div class="row"><span class="hint">Good prompts ask for an opinion, not a fun fact.</span><button class="btn" id="add-btn" ${(state.drafts.newq || '').trim() ? '' : 'disabled'}>Add to bank</button></div>
+      </form>
+    </section>
+    <section class="past">
+      <div class="label" style="padding-bottom:12px">Past prompts</div>
+      ${state.past.map(p => `
+      <details ${state.open.has('past-' + p.when) ? 'open' : ''} data-past="${p.when}"><summary><span class="label">${p.when} · ${p.answers.length} wrote · ${p.from ? 'from ' + P[p.from].name : 'default'}</span><span class="pq">${p.q}</span></summary>${pieces(p.answers)}</details>`).join('')}
+    </section>`;
+}
+
+function circle() {
+  const n = FRIENDS.length + 1;
+  return `<section class="cap"><div class="row"><span class="label">Your circle</span><span class="count">${n} of ${CIRCLE_MAX} spots</span></div>
+      <div class="bar"><i style="width:${n / CIRCLE_MAX * 100}%"></i></div></section>
+    <section class="circle-list">
+      ${[ME, ...FRIENDS].map(f => `<div class="member">${av(f.id)}<div class="info"><div>${f.name}</div><div>${f.id === 'me' ? 'Started this circle' : 'Joined ' + f.since}</div></div></div>`).join('')}
+    </section>
+    <div><button class="btn quiet" id="invite-btn">Invite a friend</button></div>`;
+}
+
+const views = { home, prompts, circle };
+function render() {
+  document.getElementById('view').innerHTML = `<div class="col">${views[state.view]()}</div>`;
+  document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.view === state.view));
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 1800);
+}
+
+function findThread(key) {
+  if (key.startsWith('post')) return state.posts.find(p => 'post' + p.id === key).comments;
+  for (const a of [...state.prompt.answers, ...state.past.flatMap(p => p.answers)]) if (a.id === key) return a.comments;
+}
+
+function tick() {
+  const tm = state.timer;
+  tm.left = Math.max(0, tm.left - 1);
+  const el = document.getElementById('timer');
+  if (el) {
+    el.textContent = tm.left ? fmt(tm.left) : 'Time';
+    document.getElementById('tbar').style.width = (tm.left / WRITE_SECONDS * 100) + '%';
+    if (!tm.left) { el.classList.add('done'); document.getElementById('timer-hint').textContent = 'Finish your sentence, then share.'; }
+  }
+  if (!tm.left) clearInterval(tm.h);
+}
+
+document.addEventListener('click', e => {
+  const tab = e.target.closest('nav button');
+  if (tab) { state.view = tab.dataset.view; render(); return; }
+  const tog = e.target.closest('[data-toggle]');
+  if (tog) { const k = tog.dataset.toggle; state.open.has(k) ? state.open.delete(k) : state.open.add(k); render(); const i = document.getElementById('c-' + k); if (i) i.focus(); return; }
+  if (e.target.id === 'start-btn') {
+    state.timer.started = true; state.timer.h = setInterval(tick, 1000);
+    render(); document.getElementById('answer').focus(); return;
+  }
+  if (e.target.id === 'answer-btn') {
+    clearInterval(state.timer.h);
+    state.prompt.answers.unshift({ id: 'mine', by: 'me', t: state.drafts.answer.trim(), comments: [] });
+    state.answered = true; delete state.drafts.answer; render(); toast('Shared with your circle'); return;
+  }
+  if (e.target.id === 'post-btn') {
+    state.posts.unshift({ id: ++uid, by: 'me', day: 'Today', time: 'Just now', t: state.drafts.post.trim(), comments: [] });
+    delete state.drafts.post; render(); toast('Posted'); return;
+  }
+  const rm = e.target.closest('[data-remove]');
+  if (rm) { state.bank = state.bank.filter(b => b.id !== rm.dataset.remove); render(); toast('Removed from bank'); return; }
+  if (e.target.id === 'invite-btn') toast('Invite link copied (mockup)');
+});
+
+document.addEventListener('toggle', e => {
+  const d = e.target.closest && e.target.closest('[data-past]');
+  if (d) d.open ? state.open.add('past-' + d.dataset.past) : state.open.delete('past-' + d.dataset.past);
+}, true);
+
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  if (e.target.id === 'add-form') {
+    const q = (state.drafts.newq || '').trim(); if (!q) return;
+    state.bank.push({ id: 'b' + (++uid), by: 'me', q });
+    delete state.drafts.newq; render(); toast('Added to the prompt bank'); return;
+  }
+  const key = e.target.dataset.reply;
+  const v = (state.drafts['c-' + key] || '').trim();
+  if (!key || !v) return;
+  findThread(key).push({ by: 'me', t: v });
+  delete state.drafts['c-' + key];
+  render(); document.getElementById('c-' + key)?.focus();
+});
+
+document.addEventListener('input', e => {
+  const id = e.target.id; if (!id) return;
+  state.drafts[id] = e.target.value;
+  if (id === 'answer') {
+    const n = words(e.target.value);
+    document.getElementById('answer-count').textContent = `${n} word${n === 1 ? '' : 's'}`;
+    document.getElementById('answer-btn').disabled = !n;
+  }
+  if (id === 'newq') document.getElementById('add-btn').disabled = !e.target.value.trim();
+  if (id === 'post') {
+    document.getElementById('post-count').textContent = `${e.target.value.length} / 280`;
+    document.getElementById('post-btn').disabled = !e.target.value.trim();
+  }
+});
+
+render();
+</script>
