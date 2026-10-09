@@ -22,11 +22,11 @@ const ICONS = {
   bee: '<ellipse cx="12" cy="14" rx="5" ry="6"/><path d="M7.5 12h9M7.5 15.5h9"/><path d="M10 8.5C8 5 4.5 5.5 5 8s3 2 5 1.5M14 8.5c2-3.5 5.5-3 5-.5s-3 2-5 1.5"/>',
 };
 const ICON_NAMES = Object.keys(ICONS);
-const TINTS = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'];
+const TINTS = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8'];
 const tint = name => TINTS[ICON_NAMES.indexOf(name) % TINTS.length];
 const icon = (name, cls = '') => {
   const n = ICONS[name] ? name : 'cloud';
-  return `<span class="av ${cls}" style="background:var(--${tint(n)})" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg></span>`;
+  return `<span class="av ${cls}" style="background:var(--${tint(n)})" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg></span>`;
 };
 const member = id => state.members[id] || { name: 'Someone', pfp: 'cloud' };
 const av = (id, cls) => icon(member(id).pfp, cls);
